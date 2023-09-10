@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2023/08/12 11:21:35.000.118,C:\Users\igorq\OneDrive\Documentos\Embarcadero\Studio\Projects\Project1.dproj=C:\Git\embarcadero-conference\2023\server\chatgpt_server.dproj</Transaction>
+    <Transaction>2023/08/12 11:32:02.000.067,=C:\Git\embarcadero-conference\2023\server\Unit1.pas</Transaction>
+    <Transaction>2023/08/12 11:33:32.000.650,C:\Git\embarcadero-conference\2023\server\src\providers\Providers.Main.dfm=C:\Git\embarcadero-conference\2023\server\Unit1.dfm</Transaction>
+    <Transaction>2023/08/12 11:33:32.000.650,C:\Git\embarcadero-conference\2023\server\src\providers\Providers.Main.pas=C:\Git\embarcadero-conference\2023\server\Unit1.pas</Transaction>
+    <Transaction>2023/08/13 17:52:25.000.095,C:\Git\embarcadero-conference\2023\server\src\providers\Providers.Main.pas=</Transaction>
+    <Transaction>2023/08/13 17:54:58.000.021,=C:\Git\embarcadero-conference\2023\server\Unit1.pas</Transaction>
+    <Transaction>2023/08/13 17:55:17.000.893,C:\Git\embarcadero-conference\2023\server\Unit1.pas=C:\Git\embarcadero-conference\2023\server\src\providers\Providers.Key.pas</Transaction>
+    <Transaction>2023/08/17 01:01:29.066,=C:\Git\embarcadero-conference\2023\server\Unit1.pas</Transaction>
+    <Transaction>2023/08/17 01:03:59.859,C:\Git\embarcadero-conference\2023\server\src\controllers\Controllers.ChatGPT.pas=C:\Git\embarcadero-conference\2023\server\Unit1.pas</Transaction>
+  </Transactions>
+</BorlandProject>

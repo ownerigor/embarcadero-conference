@@ -1,0 +1,5 @@
+inherited ServiceBase1: TServiceBase1
+  Height = 216
+  Width = 299
+  PixelsPerInch = 120
+end

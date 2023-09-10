@@ -1,0 +1,17 @@
+unit Services.ChatGPT;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, Services.Base;
+
+type
+  TServiceBase1 = class(TServiceBase)
+  end;
+
+implementation
+
+
+{$R *.dfm}
+
+end.

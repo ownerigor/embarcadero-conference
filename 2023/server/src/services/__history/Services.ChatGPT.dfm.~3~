@@ -1,0 +1,5 @@
+inherited ServiceChatGPT: TServiceChatGPT
+  Height = 216
+  Width = 299
+  PixelsPerInch = 120
+end

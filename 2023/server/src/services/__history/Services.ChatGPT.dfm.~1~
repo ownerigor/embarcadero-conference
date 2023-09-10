@@ -1,0 +1,3 @@
+inherited ServiceBase1: TServiceBase1
+  PixelsPerInch = 120
+end

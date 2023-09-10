@@ -1,0 +1,492 @@
+﻿unit Services.Base;
+
+interface
+
+uses System.SysUtils, Providers.Connection, FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error,
+  FireDAC.UI.Intf, FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, FireDAC.Phys.FB,
+  FireDAC.Phys.FBDef, FireDAC.ConsoleUI.Wait, Data.DB, FireDAC.Comp.Client, Server.Response, Server.Response.Intf, System.JSON,
+  DataSet.Serialize, System.StrUtils, System.Generics.Collections, FireDAC.Comp.DataSet, System.Math,
+  FireDAC.Stan.Param, FireDAC.Comp.UI, DBXJSON, DBXJSONReflect, System.NetEncoding, FireDAC.VCLUI.Wait,
+  FireDAC.Phys.IBBase, Services.Base.Context, Data.DBCommon, System.Threading, System.Classes;
+
+
+type
+  TServiceBase = class(TProviderConnection)
+    procedure DataModuleDestroy(Sender: TObject);
+  private
+    FInvalidPairs: TArray<string>;
+    FConnection: TFDConnection;
+    FSchemaAdapter: TFDSchemaAdapter;
+    FState: TDataSetState;
+    FCookies: TStrings;
+    FContext: IServiceBaseContext;
+    FHasDataDictionary: Boolean;
+    FExercicio: Integer;
+    FAuthorization: string;
+    FQueryInsertLog: TObjectList<TFDQuery>;
+    FOldSchemaAdapterApplyUpdates: TNotifyEvent;
+    function GetFKViolatedMessage: string;
+    function ExtractFKViolatedTableName(const AErrorMessage: string): string;
+    procedure Initialize;
+    procedure HandlerDataInclusao(const ADataSet: TDataSet; const AField: TField);
+    procedure HandlerDataAlteracao(const ADataSet: TDataSet; const AField: TField);
+    procedure HandlerLoginInclusao(const ADataSet: TDataSet; const AField: TField);
+    procedure HandlerLoginAlteracao(const ADataSet: TDataSet; const AField: TField);
+    procedure DoUpdateRecord(ASender: TDataSet; ARequest: TFDUpdateRequest; var AAction: TFDErrorAction; AOptions: TFDUpdateRowOptions);
+    procedure DoAfterApplyUpdatesSchemaAdapter(Sender: TObject);
+  protected
+    property InvalidPairs: TArray<string> read FInvalidPairs write FInvalidPairs;
+    property State: TDataSetState read FState;
+    property Context: IServiceBaseContext read FContext write FContext;
+    property Authorization: string read FAuthorization write FAuthorization;
+    function StartTransaction: Boolean;
+    function GetKeyField(const ADataSet: TDataSet): string;
+    function DoBeforeCommit: IResponse; virtual;
+    function CanCommit(const AQuery: TFDQuery): IResponse; virtual;
+    function CanDelete: IResponse; virtual;
+    function Commit(const ASchemaAdapter: TFDSchemaAdapter): IResponse; overload; virtual;
+    function Append(const AQuery: TFDQuery; const AJSONObject: TJSONObject; const ACallback: TProc): IResponse;
+    function Update(const AQuery: TFDQuery; const AJSONObject: TJSONObject): IResponse;
+    function ValidateQuery(const AQuery: TFDQuery): IResponse; overload;
+    function ValidateQuery(const AQuery: TFDQuery; const AJSONObject: TJSONObject): IResponse; overload;
+    function ExisteDuplicidade(const AQuery: TFDQuery; const AFields: array of TField): Boolean;
+    procedure RemoveInvalidPairs(const AJSONObject: TJSONObject);
+    procedure CarregarDadosAuditoria(const ADataSet: TDataSet);
+    procedure CloseTransaction(const ASuccess: Boolean);
+    procedure ProcessException(const AQuery: TFDQuery);
+    procedure DoAfterCommit; virtual;    
+  public
+    constructor Create; reintroduce; overload; virtual;
+    constructor Create(const AContext: IServiceBaseContext); reintroduce; overload; virtual;
+    property Cookies: TStrings read FCookies write FCookies;
+    property Exercicio: integer read FExercicio write FExercicio;
+    function GetConnection: TFDConnection;
+    function GetContext: IServiceBaseContext;
+    function GetProcessFile(const AValue: Int64; const ADeleteFile: Boolean = True): string;
+    procedure SetContext(const AContext: IServiceBaseContext); virtual;
+    procedure SetConnection(const AConnection: TFDConnection);
+    procedure SetSchemaAdapter(const ASchemaAdapter: TFDSchemaAdapter);
+    procedure ClearFields(const AFields: array of TField);
+  end;
+
+implementation
+
+{$R *.dfm}
+
+function TServiceBase.Append(const AQuery: TFDQuery; const AJSONObject: TJSONObject; const ACallback: TProc): IResponse;
+begin
+  FState := TDataSetState.dsInsert;
+  RemoveInvalidPairs(AJSONObject);
+  if not AQuery.Active then
+  begin
+    AQuery.Open;
+  end;
+  AQuery.Append;
+  if Assigned(ACallback) then
+    ACallback;
+  AQuery.LoadFromJSON(AJSONObject);
+  Result := CanCommit(AQuery);
+  if Result.Success then
+    if Assigned(FSchemaAdapter) then
+      Result := Commit(FSchemaAdapter)
+end;
+
+function TServiceBase.CanCommit(const AQuery: TFDQuery): IResponse;
+begin
+  Result := ValidateQuery(AQuery);
+end;
+
+function TServiceBase.CanDelete: IResponse;
+begin
+  Result := TResponse.Create;
+end;
+
+procedure TServiceBase.CarregarDadosAuditoria(const ADataSet: TDataSet);
+var
+  LField: TField;
+begin
+  for LField in ADataSet.Fields do
+  begin
+    if LField.Origin.StartsWith('DTA_INC_') then
+      HandlerDataInclusao(ADataSet, LField);
+    if LField.Origin.StartsWith('DTA_ALT_') then
+      HandlerDataAlteracao(ADataSet, LField);
+    if LField.Origin.StartsWith('LOGIN_ALT_') then
+      HandlerLoginAlteracao(ADataSet, LField);
+    if LField.Origin.StartsWith('LOGIN_INC_') then
+      HandlerLoginInclusao(ADataSet, LField);
+  end;
+end;
+
+procedure TServiceBase.ClearFields(const AFields: array of TField);
+var
+  LField: TField;
+begin
+  for LField in AFields do
+    LField.Clear;
+end;
+
+procedure TServiceBase.CloseTransaction(const ASuccess: Boolean);
+begin
+  if ASuccess and GetConnection.InTransaction then
+    GetConnection.Commit
+  else
+    GetConnection.Rollback;
+end;
+
+function TServiceBase.Commit(const ASchemaAdapter: TFDSchemaAdapter): IResponse;
+begin
+  //Result := Self.Commit([], ASchemaAdapter);
+end;
+
+constructor TServiceBase.Create;
+begin
+  inherited Create(nil);
+  Initialize;
+end;
+
+constructor TServiceBase.Create(const AContext: IServiceBaseContext);
+begin
+  inherited Create(nil);
+  Initialize;
+  SetContext(AContext);
+end;
+
+procedure TServiceBase.Initialize;
+var
+  I: Integer;
+  LField: TField;
+  LSetSchemaAdapter: Boolean;
+begin
+  LSetSchemaAdapter := True;
+  FHasDataDictionary := False;
+  FState := TDataSetState.dsBrowse;
+  FQueryInsertLog := TObjectList<TFDQuery>.Create(False);
+  FOldSchemaAdapterApplyUpdates := nil;
+  for I := 0 to Pred(Self.ComponentCount) do
+  begin
+    if LSetSchemaAdapter and Self.Components[I].InheritsFrom(TFDSchemaAdapter) then
+    begin
+      SetSchemaAdapter(TFDSchemaAdapter(Self.Components[I]));
+      if Assigned(FSchemaAdapter.AfterApplyUpdate) then
+        FOldSchemaAdapterApplyUpdates := FSchemaAdapter.AfterApplyUpdate;
+      FSchemaAdapter.AfterApplyUpdate := DoAfterApplyUpdatesSchemaAdapter;
+      LSetSchemaAdapter := False;
+    end;
+    if Self.Components[I].InheritsFrom(TFDMemTable) then
+      TFDMemTable(Self.Components[I]).FormatOptions.StrsEmpty2Null := True;
+    if not Self.Components[I].InheritsFrom(TFDQuery) then
+      Continue;
+    TFDQuery(Self.Components[I]).CachedUpdates := True;
+    TFDQuery(Self.Components[I]).ResourceOptions.SilentMode := True;
+    TFDQuery(Self.Components[I]).FetchOptions.DetailCascade := True;
+    TFDQuery(Self.Components[I]).FetchOptions.DetailServerCascade := True;
+    TFDQuery(Self.Components[I]).FetchOptions.Mode := fmAll;
+    TFDQuery(Self.Components[I]).FetchOptions.AutoFetchAll := afAll;
+    TFDQuery(Self.Components[I]).FetchOptions.RecsSkip := 0;
+    TFDQuery(Self.Components[I]).UpdateOptions.FetchGeneratorsPoint := gpImmediate;
+    TFDQuery(Self.Components[I]).OnUpdateRecord := DoUpdateRecord;
+    TFDQuery(Self.Components[I]).AfterApplyUpdates := DoAfterApplyUpdates;
+    for LField in TFDQuery(Self.Components[I]).Fields do
+    begin
+      if LField.AutoGenerateValue = arAutoInc then
+        LField.ReadOnly := True;
+    end;
+  end;
+end;
+
+procedure TServiceBase.DataModuleDestroy(Sender: TObject);
+begin
+  if Assigned(FQueryInsertLog) then
+    FQueryInsertLog.Free;
+  inherited;
+end;
+
+procedure TServiceBase.DoAfterApplyUpdates(DataSet: TFDDataSet; AErrors: Integer);
+var
+  LIndex: Integer;
+begin
+  LIndex := FQueryInsertLog.IndexOf(TFDQuery(DataSet));
+end;
+
+procedure TServiceBase.DoAfterApplyUpdatesSchemaAdapter(Sender: TObject);
+var
+  I: Integer;
+  LQuery: TFDQuery;
+begin
+  if Assigned(FOldSchemaAdapterApplyUpdates) then
+    FOldSchemaAdapterApplyUpdates(Sender);
+  for I := 0 to Pred(TFDSchemaAdapter(Sender).Count) do
+  begin
+    LQuery := TFDQuery(TFDSchemaAdapter(Sender).DataSets[I]);
+    if (not LQuery.Active) then
+      Continue;
+    LQuery.FilterChanges := [rtInserted];
+    try
+      LQuery.First;
+      while not LQuery.Eof do
+      begin
+        LQuery.Next;
+      end;
+    finally
+      LQuery.FilterChanges := [rtInserted, rtModified, rtUnmodified];
+    end;
+  end;
+end;
+
+procedure TServiceBase.DoAfterCommit;
+begin
+
+end;
+
+function TServiceBase.DoBeforeCommit: IResponse;
+begin
+  Result := TResponse.Create;
+end;
+
+procedure TServiceBase.DoUpdateRecord(ASender: TDataSet; ARequest: TFDUpdateRequest; var AAction: TFDErrorAction; AOptions: TFDUpdateRowOptions);
+begin
+
+end;
+
+function TServiceBase.GetConnection: TFDConnection;
+begin
+  if Assigned(FConnection) then
+    Exit(FConnection);
+  Result := FConnection;
+end;
+
+function TServiceBase.GetContext: IServiceBaseContext;
+begin
+  Result := FContext;
+end;
+
+function TServiceBase.GetFKViolatedMessage: string;
+begin
+  Result := 'Não é possível excluir este registro, pois ele está relacionado com a(o) "%s" do sistema.';
+end;
+
+function TServiceBase.GetKeyField(const ADataSet: TDataSet): string;
+var
+  LField: TField;
+begin
+  for LField in ADataSet.Fields do
+    if pfInKey in LField.ProviderFlags then
+      Exit(LField.FieldName);
+end;
+
+function TServiceBase.GetProcessFile(const AValue: Int64; const ADeleteFile: Boolean = True): string;
+var
+  LFile: string;
+begin
+  Result := LFile;
+
+  if not ADeleteFile then
+    Exit;
+
+  TTask.Run(
+    procedure
+    var
+      I: Integer;
+    begin
+      Sleep(30000);
+      for I := 1 to 50 do
+      begin
+        if DeleteFile(LFile) then
+          Break;
+        Sleep(10000);
+      end;
+    end);
+end;
+
+procedure TServiceBase.HandlerDataAlteracao(const ADataSet: TDataSet; const AField: TField);
+begin
+  if ADataSet.State = dsEdit then
+    AField.AsDateTime := Now
+  else
+    AField.Clear;
+end;
+
+procedure TServiceBase.HandlerDataInclusao(const ADataSet: TDataSet; const AField: TField);
+begin
+  if ADataSet.State = dsInsert then
+    AField.AsDateTime := Now
+  else
+    AField.NewValue := AField.OldValue;
+end;
+
+procedure TServiceBase.HandlerLoginAlteracao(const ADataSet: TDataSet; const AField: TField);
+begin
+  if (ADataSet.State = dsEdit) and Assigned(FContext.Payload) then
+    AField.AsString := FContext.LoggedUser
+  else
+    AField.Clear;
+end;
+
+procedure TServiceBase.HandlerLoginInclusao(const ADataSet: TDataSet; const AField: TField);
+begin
+  if (ADataSet.State = dsInsert) and Assigned(FContext.Payload) then
+    AField.AsString := FContext.LoggedUser
+  else
+    AField.NewValue := AField.OldValue;
+end;
+
+procedure TServiceBase.ProcessException(const AQuery: TFDQuery);
+begin
+  AQuery.FilterChanges := [rtModified, rtInserted, rtDeleted, rtHasErrors];
+  try
+    AQuery.First;
+    while not AQuery.Eof do
+    begin
+      if Assigned(AQuery.RowError) then
+      begin
+        raise EFDException.Create(AQuery.RowError.FDCode, AQuery.RowError.Message);
+      end;
+      AQuery.Next;
+    end;
+  finally
+    AQuery.FilterChanges := [rtUnmodified, rtModified, rtInserted];
+  end;
+end;
+
+procedure TServiceBase.RemoveInvalidPairs(const AJSONObject: TJSONObject);
+var
+  I, LPair: Integer;
+begin
+  for LPair := Pred(AJSONObject.Count) downto 0 do
+  begin
+    if MatchStr(AJSONObject.Pairs[LPair].JsonString.Value.ToLower, FInvalidPairs) then
+    begin
+      AJSONObject.RemovePair(AJSONObject.Pairs[LPair].JsonString.Value).Free;
+      Continue;
+    end
+    else if AJSONObject.Pairs[LPair].JsonValue.InheritsFrom(TJSONObject) then
+      RemoveInvalidPairs(TJSONObject(AJSONObject.Pairs[LPair].JsonValue))
+    else if AJSONObject.Pairs[LPair].JsonValue.InheritsFrom(TJSONArray) then
+    begin
+      for I := 0 to Pred(TJSONArray(AJSONObject.Pairs[LPair].JsonValue).Count) do
+      begin
+        if TJSONArray(AJSONObject.Pairs[LPair].JsonValue).Items[I].InheritsFrom(TJSONObject) then
+          RemoveInvalidPairs(TJSONObject(TJSONArray(AJSONObject.Pairs[LPair].JsonValue).Items[I]));
+      end;
+    end;
+  end;
+end;
+
+procedure TServiceBase.SetConnection(const AConnection: TFDConnection);
+var
+  I: Integer;
+begin
+  if Assigned(AConnection) then
+  begin
+    FConnection := AConnection;
+    for I := 0 to Pred(Self.ComponentCount) do
+      if Self.Components[I].InheritsFrom(TFDQuery) then
+      begin
+        TFDQuery(Self.Components[I]).Connection := AConnection;
+        TFDQuery(Self.Components[I]).CachedUpdates := True;
+      end;
+  end;
+end;
+
+procedure TServiceBase.SetContext(const AContext: IServiceBaseContext);
+begin
+  if Assigned(AContext) and (not Assigned(FContext)) then
+  begin
+    FContext := AContext;
+    FAuthorization := AContext.Authorization;
+  end;
+end;
+
+procedure TServiceBase.SetSchemaAdapter(const ASchemaAdapter: TFDSchemaAdapter);
+var
+  I: Integer;
+  LQuery: TFDQuery;
+  LIgnore: Boolean;
+begin
+  if not Assigned(ASchemaAdapter) then
+    Exit;
+  FSchemaAdapter := ASchemaAdapter;
+  for I := 0 to Pred(Self.ComponentCount) do
+    if Self.Components[I].InheritsFrom(TFDQuery) then
+    begin
+      LIgnore := False;
+      if not LIgnore then
+        TFDQuery(Self.Components[I]).SchemaAdapter := ASchemaAdapter;
+    end;
+end;
+
+function TServiceBase.StartTransaction: Boolean;
+begin
+  Result := not GetConnection.InTransaction;
+  if Result then
+    GetConnection.StartTransaction;
+end;
+
+function TServiceBase.Update(const AQuery: TFDQuery; const AJSONObject: TJSONObject): IResponse;
+begin
+  FState := TDataSetState.dsEdit;
+  RemoveInvalidPairs(AJSONObject);
+  AQuery.MergeFromJSONObject(AJSONObject);
+  Result := CanCommit(AQuery);
+end;
+
+function TServiceBase.ValidateQuery(const AQuery: TFDQuery; const AJSONObject: TJSONObject): IResponse;
+begin
+  AQuery.Open;
+  AQuery.LoadFromJSON(AJSONObject);
+  Result := ValidateQuery(AQuery);
+end;
+
+function TServiceBase.ExisteDuplicidade(const AQuery: TFDQuery; const AFields: array of TField): Boolean;
+var
+  LField: TField;
+  LRecNo: Integer;
+begin
+  Result := False;
+  AQuery.Filtered := False;
+  try
+    AQuery.First;
+    while not AQuery.Eof do
+    begin
+      for LField in AFields do
+      begin
+        if not AQuery.Filter.Trim.IsEmpty then
+          AQuery.Filter := AQuery.Filter + ' and ';
+        if LField.IsNull then
+          AQuery.Filter := AQuery.Filter + LField.FieldName + ' is null'
+        else
+        begin
+          if LField.DataType in [ftString, ftWideString, ftWideMemo, ftMemo] then
+            AQuery.Filter := AQuery.Filter + LField.FieldName + ' = ' + QuotedStr(LField.AsString)
+          else
+            AQuery.Filter := AQuery.Filter + LField.FieldName + ' = ' + LField.AsString;
+        end;
+      end;
+      LRecNo := AQuery.RecNo;
+      AQuery.Filtered := True;
+      if (AQuery.RecordCount > 1) then
+        Exit(True);
+      AQuery.Filtered := False;
+      AQuery.Filter := EmptyStr;
+      AQuery.RecNo := LRecNo;
+      AQuery.Next;
+    end;
+  finally
+    AQuery.Filtered := False;
+  end;
+end;
+
+function TServiceBase.ExtractFKViolatedTableName(const AErrorMessage: string): string;
+begin
+  Result := Copy(AErrorMessage, Pos('on table "', AErrorMessage) + 10, AErrorMessage.Length);
+  Result := Result.Remove(Pred(Pos('"', Result)), Result.Length);
+end;
+
+function TServiceBase.ValidateQuery(const AQuery: TFDQuery): IResponse;
+begin
+  if not FHasDataDictionary then
+    Exit(TResponse.Create);
+end;
+
+end.

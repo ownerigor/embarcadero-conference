@@ -1,0 +1,22 @@
+object ProviderConnection: TProviderConnection
+  Height = 244
+  Width = 261
+  PixelsPerInch = 120
+  object Connection: TFDConnection
+    Params.Strings = (
+      'ConnectionDef=SIA_Pooled')
+    ResourceOptions.AssignedValues = [rvAutoReconnect, rvSilentMode]
+    ResourceOptions.SilentMode = True
+    ResourceOptions.AutoReconnect = True
+    UpdateOptions.AssignedValues = [uvAutoCommitUpdates]
+    ConnectedStoredUsage = []
+    LoginPrompt = False
+    Left = 110
+    Top = 60
+  end
+  object FDGUIxWaitCursor: TFDGUIxWaitCursor
+    Provider = 'Console'
+    Left = 110
+    Top = 130
+  end
+end

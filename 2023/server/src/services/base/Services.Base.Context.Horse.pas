@@ -1,0 +1,103 @@
+
+unit Services.Base.Context.Horse;
+
+interface
+
+uses Services.Base.Context, Horse, System.JSON, System.Generics.Collections, Web.HTTPApp;
+
+type
+  IServiceBaseContext = Services.Base.Context.IServiceBaseContext;
+
+  TServiceBaseContext = class(TInterfacedObject, IServiceBaseContext)
+  private
+    FPayload: TJSONObject;
+    FQueryParams: TDictionary<string, string>;
+    FHeaders: TDictionary<string, string>;
+    FRequest: THorseRequest;
+    FAuthorization: string;
+    function Payload: TJSONObject;
+    function WebRequest: TWebRequest;
+    function QueryParams: TDictionary<string, string>;
+    function Headers: TDictionary<string, string>;
+    function LoggedUser: string;
+    function Authorization: string;
+    constructor Create(const ARequest: THorseRequest); reintroduce;
+  public
+    class function New(const ARequest: THorseRequest): IServiceBaseContext;
+    destructor Destroy; override;
+  end;
+
+implementation
+
+function TServiceBaseContext.Authorization: string;
+begin
+  Result := FAuthorization;
+end;
+
+constructor TServiceBaseContext.Create(const ARequest: THorseRequest);
+var
+  LPayload: TJSONObject;
+begin
+  FRequest := ARequest;
+  FQueryParams := TDictionary<string, string>.Create(FRequest.Query.Dictionary);
+  FHeaders := TDictionary<string, string>.Create(FRequest.Headers.Dictionary);
+  FAuthorization := FRequest.RawWebRequest.Authorization;
+  LPayload := FRequest.Session<TJSONObject>;
+  if Assigned(LPayload) then
+    FPayload := LPayload.Clone as TJSONObject;
+end;
+
+destructor TServiceBaseContext.Destroy;
+begin
+  if Assigned(FPayload) then
+    FPayload.Free;
+  if Assigned(FQueryParams) then
+    FQueryParams.Free;
+  if Assigned(FHeaders) then
+    FHeaders.Free;
+  inherited;
+end;
+
+function TServiceBaseContext.Headers: TDictionary<string, string>;
+begin
+  Result := FHeaders;
+end;
+
+function TServiceBaseContext.LoggedUser: string;
+const
+  USER_INTEGRACAO = 2;
+  USER_DEFAULT = 0;
+begin
+  Result := 'undefined';
+  if Assigned(FPayload) then
+  begin
+    if (FPayload.GetValue<Integer>('type', USER_DEFAULT) = USER_INTEGRACAO) then
+    begin
+      if Assigned(FHeaders) and FHeaders.ContainsKey('x-username') then
+        Exit(FHeaders.Items['x-username'])
+    end;
+    Result := FPayload.GetValue<string>('user');
+  end;
+end;
+
+class function TServiceBaseContext.New(const ARequest: THorseRequest): IServiceBaseContext;
+begin
+  Result := TServiceBaseContext.Create(ARequest);
+end;
+
+function TServiceBaseContext.Payload: TJSONObject;
+begin
+  Result := FPayload;
+end;
+
+function TServiceBaseContext.QueryParams: TDictionary<string, string>;
+begin
+  Result := FQueryParams;
+end;
+
+function TServiceBaseContext.WebRequest: TWebRequest;
+begin
+  Result := FRequest.RawWebRequest;
+end;
+
+end.
