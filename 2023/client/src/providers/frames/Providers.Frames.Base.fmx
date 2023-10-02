@@ -1,0 +1,5 @@
+object FrameBase: TFrameBase
+  Size.Width = 350.000000000000000000
+  Size.Height = 500.000000000000000000
+  Size.PlatformDefault = False
+end

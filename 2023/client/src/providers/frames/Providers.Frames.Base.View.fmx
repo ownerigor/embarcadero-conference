@@ -1,0 +1,9 @@
+inherited FrameBaseView: TFrameBaseView
+  object lytContent: TLayout
+    Align = Contents
+    Size.Width = 348.000000000000000000
+    Size.Height = 500.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+  end
+end

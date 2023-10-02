@@ -5,5 +5,8 @@
 	"homepage": "",
 	"mainsrc": "./src",
 	"projects": [],
-	"dependencies": {}
+	"dependencies": {
+		"github.com/viniciussanchez/dataset-serialize": "^v2.4.9",
+		"github.com/viniciussanchez/restrequest4delphi": "^v4.0.7"
+	}
 }

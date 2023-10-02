@@ -25,5 +25,6 @@ uses
   Arrays.Helpers in 'src\providers\helpers\Arrays.Helpers.pas';
 
 begin
+  Controllers.ChatGPT.Registry;
   THorse.Listen(9000);
 end.

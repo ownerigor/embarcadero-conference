@@ -3,7 +3,7 @@ unit Providers.Request;
 interface
 
 uses Providers.Request.Intf, System.JSON, System.Classes, RestRequest4D, Providers.Session, System.SysUtils,
-  Rest.Types;
+  Rest.Types, Providers.Key;
 
 type
   IRequest = Providers.Request.Intf.IRequest;
@@ -25,7 +25,6 @@ type
     function Post: IResponse;
     function Delete: IResponse;
     function Put: IResponse;
-    function RenovarToken: Boolean;
     function Execute(const AMethod: TRESTRequestMethod): IResponse;
     procedure DoBeforeExecute;
     constructor Create;
@@ -101,9 +100,12 @@ begin
 end;
 
 procedure TRequest.DoBeforeExecute;
+var
+  KeyAutenthication: TKeyAuthentication;
 begin
-  if not TSession.GetInstance.Token.Access.Trim.IsEmpty then
-    FRequest.Token('bearer ' + TSession.GetInstance.Token.Access);
+  KeyAutenthication := TKeyAuthentication.New;
+  if not KeyAutenthication.GetKey.IsEmpty then
+    FRequest.TokenBearer(KeyAutenthication.GetKey);
 end;
 
 function TRequest.Execute(const AMethod: TRESTRequestMethod): IResponse;
@@ -118,11 +120,6 @@ begin
       Result := FRequest.Get;
     else
       Result := FRequest.Delete;
-  end;
-  if (Result.StatusCode = 401) then
-  begin
-    if RenovarToken then
-      Result := Execute(AMethod);
   end;
 end;
 
@@ -144,20 +141,6 @@ end;
 function TRequest.Put: IResponse;
 begin
   Result := Execute(TRESTRequestMethod.rmPUT);
-end;
-
-function TRequest.RenovarToken: Boolean;
-var
-  LResponse: IResponse;
-begin
-  LResponse := RestRequest4D.TRequest.New
-    .Token('bearer ' + TSession.GetInstance.Token.Refresh)
-    .BaseURL('http://localhost:8000')
-    .Resource('refresh')
-    .Get;
-  Result := (LResponse.StatusCode = 200);
-  if Result then
-    TSession.GetInstance.Token.Access := LResponse.JSONValue.GetValue<string>('access');
 end;
 
 function TRequest.Resource(const AValue: string): IRequest;

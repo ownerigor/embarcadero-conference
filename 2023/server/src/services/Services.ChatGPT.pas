@@ -11,31 +11,46 @@ uses
 
 type
   TServiceChatGPT = class(TServiceBase)
+  private
+    function GetObjectMessage(const AMessage: string): TJSONObject;
   public
-    function GetResponseChatGPT(const AJSONObject: TJSONObject): IResponse;
+    function GetResponseChatGPT(const AMessage: string): string;
   end;
 
 implementation
 
 uses
-  RESTRequest4D, Providers.Key;
+  Providers.Key, Providers.Request.Intf, Providers.Request;
 
 
 {$R *.dfm}
 
 { TServiceChatGPT }
 
-function TServiceChatGPT.GetResponseChatGPT(const AJSONObject: TJSONObject): IResponse;
-var
-  LRequest: IRequest;
-  KeyAutenthication: TKeyAuthentication;
+function TServiceChatGPT.GetObjectMessage(const AMessage: string): TJSONObject;
 begin
-  KeyAutenthication := TKeyAuthentication.New;
-  LRequest := TRequest.New
-    .BaseURL('https://api.openai.com/v1/chat/completions')
-    .AddHeader('Authorization: Bearer', KeyAutenthication.GetKey)
-    .AddBody(AJSONObject);
+  Result := TJSONObject.Create;
+  Result.AddPair('role', 'user').AddPair('content', AMessage);
+end;
 
+function TServiceChatGPT.GetResponseChatGPT(const AMessage: string): string;
+var
+  LResponse: IResponse;
+  LJSONObjectMain: TJSONObject;
+  LJSONArray: TJSONArray;
+begin
+  LJSONObjectMain := TJSONObject.Create;
+  LJSONArray := TJSONArray.Create;
+  LJSONObjectMain.AddPair('model', 'gpt-3.5-turbo');
+  LJSONObjectMain.AddPair('messages', LJSONArray.Add(GetObjectMessage(AMessage)));
+
+  LResponse := TRequest.New
+    .BaseURL('https://api.openai.com/v1/chat/completions')
+    .AddBody(LJSONObjectMain)
+    .Post;
+  if LResponse.StatusCode = 200 then
+    Result := TJSONObject(LResponse.JSONValue).GetValue<TJSONArray>('choices').Items[0]
+      .GetValue<TJSONObject>('message').GetValue<string>('content');
 end;
 
 end.

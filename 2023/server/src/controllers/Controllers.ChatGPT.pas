@@ -8,7 +8,7 @@ implementation
 
 uses Horse, DataSet.Serialize, Services.Base.Context.Horse,
   Providers.Request.Intf, System.JSON, Providers.Request, Providers.Key,
-  Server.Response.Handler, Services.ChatGPT, JSON.Helpers;
+  Services.ChatGPT, JSON.Helpers, Server.Response.Handler;
 
 procedure DoAskChatGPT(Req: THorseRequest; Res: THorseResponse; Next: TProc);
 var
@@ -16,8 +16,9 @@ var
 begin
   LService := TServiceChatGPT.Create(TServiceBaseContext.New(Req));
   try
-    if not(TResponseHandler.New(Res).HasError(LService.GetResponseChatGPT(TJSONObject.FromString(Req.Body))) then
-      Res.Status(THTTPStatus.NoContent);
+    if Req.Query.ContainsKey('message') then
+      Res.ContentType('application/json; charset=utf-8').
+        Send(LService.GetResponseChatGPT(Req.Query.Field('message').AsString));
   finally
     LService.Free;
   end;

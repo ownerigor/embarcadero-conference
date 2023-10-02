@@ -6,8 +6,6 @@ uses System.SysUtils, System.Classes;
 
 type
   TServer = class
-  private
-    function FormatURL(const AValue: string): string;
   public
     function ChatGPT: string;
     class function GetInstance: TServer;
@@ -23,15 +21,7 @@ implementation
 
 function TServer.ChatGPT: string;
 begin
-  Result := '';
-  //URL da minha API do ChatGPT.
-end;
-
-function TServer.FormatURL(const AValue: string): string;
-begin
-  Result := AValue;
-  if not Result.EndsWith('/') and not Result.Trim.IsEmpty then
-    Result := Result + '/';
+  Result := 'http://localhost:9000';
 end;
 
 class function TServer.GetInstance: TServer;
