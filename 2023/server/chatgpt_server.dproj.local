@@ -25,8 +25,8 @@
     <Transaction>2023/08/24 19:19:28.000.442,=C:\Git\embarcadero-conference\2023\server\src\providers\request\Providers.Request.Intf.pas</Transaction>
     <Transaction>2023/08/24 19:53:23.000.780,=C:\Git\embarcadero-conference\2023\server\src\providers\Providers.Session.pas</Transaction>
     <Transaction>2023/08/24 20:11:01.000.623,=C:\Git\embarcadero-conference\2023\server\src\providers\models\Providers.Models.Token.pas</Transaction>
-    <Transaction>2023/08/24 21:25:08.000.499,=C:\Git\embarcadero-conference\2023\server\src\services\base\Services.Base.Context.Horse.pas</Transaction>
     <Transaction>2023/08/24 21:25:08.000.530,=C:\Git\embarcadero-conference\2023\server\src\services\base\Services.Base.Context.pas</Transaction>
+    <Transaction>2023/08/24 21:25:08.000.499,=C:\Git\embarcadero-conference\2023\server\src\services\base\Services.Base.Context.Horse.pas</Transaction>
     <Transaction>2023/09/03 12:29:05.000.108,=C:\Git\embarcadero-conference\2023\server\src\providers\handler\Server.Response.Handler.pas</Transaction>
     <Transaction>2023/09/03 12:29:05.000.056,=C:\Git\embarcadero-conference\2023\server\src\providers\handler\Server.Response.Handler.Intf.pas</Transaction>
     <Transaction>2023/09/03 12:31:27.000.953,=C:\Git\embarcadero-conference\2023\server\src\providers\handler\Server.Response.pas</Transaction>
