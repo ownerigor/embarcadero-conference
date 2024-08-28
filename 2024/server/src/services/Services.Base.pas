@@ -24,13 +24,15 @@ type
     FReportPath: string;
     FParams: THorseList;
     function GetExportMode: TExportMode;
-    function GetReportPreview: TMemoryStream;
+    function GetReportStream: TMemoryStream;
     function PrepareReport: Boolean;
     function GetReportPath: string;
     procedure ExportReport(const AStream: TMemoryStream; const AfrxCustomExportFilter: TfrxCustomExportFilter);
     procedure ExportReportExcel(const AStream: TMemoryStream);
+  protected
+    function GetReportName: string; virtual;
   public
-    function GetReport(const AReport: TfrxReport; const AQuery: TFDQuery; const AParams: THorseList): TStream;
+    function GetReport(const AReport: TfrxReport; const AParams: THorseList): TFileReturn;
     procedure GenerateReport(const AStream: TMemoryStream = nil);
   end;
 
@@ -49,8 +51,6 @@ begin
   AfrxCustomExportFilter.ShowDialog := False;
   AfrxCustomExportFilter.UseFileCache := False;
   AfrxCustomExportFilter.Stream := AStream;
-  AfrxCustomExportFilter.DefaultPath := GetReportPath;
-  AfrxCustomExportFilter.FileName := GetReportPath;
   FReport.PreviewPages.Export(AfrxCustomExportFilter);
 end;
 
@@ -67,8 +67,6 @@ begin
   frxXLSExport.ExportStyles := True;
   frxXLSExport.ExportPictures := True;
   frxXLSExport.FastExport := True;
-  frxXLSExport.DefaultPath := GetReportPath;
-  frxXLSExport.FileName := GetReportPath;
   FReport.PreviewPages.Export(frxXLSExport);
 end;
 
@@ -104,11 +102,16 @@ begin
     Result := TExportMode(StrToIntDef(LExport, TExportMode.PDF.GetValue));
 end;
 
-function TServiceBase.GetReport(const AReport: TfrxReport; const AQuery: TFDQuery; const AParams: THorseList): TStream;
+function TServiceBase.GetReport(const AReport: TfrxReport; const AParams: THorseList): TFileReturn;
 begin
   FReport := AReport;
   FParams := AParams;
-  Result := GetReportPreview;
+  Result := TFileReturn.Create(GetReportName, GetReportStream);
+end;
+
+function TServiceBase.GetReportName: string;
+begin
+  Result := 'report' + GetExportMode.GetExtension;
 end;
 
 function TServiceBase.GetReportPath: string;
@@ -121,11 +124,11 @@ begin
   Result := FReportPath;
 end;
 
-function TServiceBase.GetReportPreview: TMemoryStream;
+function TServiceBase.GetReportStream: TMemoryStream;
 begin
   Result := TMemoryStream.Create;
   try
-    GenerateReport(Result);
+     GenerateReport(Result);
   except
     Result.Free;
     raise;

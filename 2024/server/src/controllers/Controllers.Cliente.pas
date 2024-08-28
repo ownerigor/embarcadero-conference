@@ -14,7 +14,7 @@ var
 begin
   LService := TServiceCliente.Create(nil);
   try
-    Res.Send<TStream>(LService.GetReport(LService.frxReportBase, LService.qryCliente, Req.Query.Dictionary));
+    Res.Send<TFileReturn>(LService.GetReport(LService.frxReportBase, Req.Query.Dictionary));
   finally
     LService.Free;
   end;
