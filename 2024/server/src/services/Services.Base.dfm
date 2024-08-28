@@ -1,6 +1,6 @@
 object ServiceBase: TServiceBase
   Height = 136
-  Width = 419
+  Width = 640
   object Connection: TFDConnection
     Params.Strings = (
       
@@ -13,13 +13,12 @@ object ServiceBase: TServiceBase
       'Protocol=TCPIP'
       'DriverID=FB')
     ConnectedStoredUsage = [auDesignTime]
-    Connected = True
     LoginPrompt = False
     Left = 96
     Top = 48
   end
   object frxReportBase: TfrxReport
-    Version = '2022.2.10'
+    Version = '2024.1.8'
     DotMatrixReport = False
     IniFile = '\Software\Fast Reports'
     PreviewOptions.Buttons = [pbPrint, pbLoad, pbSave, pbExport, pbZoom, pbFind, pbOutline, pbPageSetup, pbTools, pbEdit, pbNavigator, pbExportQuick, pbCopy, pbSelection]
@@ -97,6 +96,36 @@ object ServiceBase: TServiceBase
     NoSysSymbols = True
     ForcedQuotes = False
     Left = 351
+    Top = 48
+  end
+  object frxXMLExport: TfrxXMLExport
+    UseFileCache = True
+    ShowProgress = True
+    OverwritePrompt = False
+    DataOnly = False
+    Background = True
+    Creator = 'FastReport'
+    EmptyLines = True
+    SuppressPageHeadersFooters = False
+    RowsCount = 0
+    Split = ssNotSplit
+    Left = 432
+    Top = 48
+  end
+  object frxXLSExport: TfrxXLSExport
+    ShowDialog = False
+    UseFileCache = True
+    ShowProgress = False
+    OverwritePrompt = False
+    DataOnly = True
+    ExportEMF = True
+    AsText = False
+    Background = True
+    FastExport = True
+    PageBreaks = False
+    EmptyLines = False
+    SuppressPageHeadersFooters = False
+    Left = 512
     Top = 48
   end
 end

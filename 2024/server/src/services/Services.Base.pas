@@ -9,7 +9,7 @@ uses
   Data.DB, FireDAC.Comp.Client, FireDAC.Phys.FB, FireDAC.Phys.FBDef, frxClass,
   frxDBSet, FireDAC.Stan.Param, FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt,
   FireDAC.Comp.DataSet, Horse.OctetStream, frxExportCSV, frxExportBaseDialog,
-  frxExportPDF, Providers.Consts, System.JSON, Types.ExportMode, Horse;
+  frxExportPDF, Providers.Consts, System.JSON, Types.ExportMode, Horse, frCoreClasses, frxExportXML, frxExportXLS;
 
 type
   TServiceBase = class(TDataModule)
@@ -17,18 +17,27 @@ type
     frxReportBase: TfrxReport;
     frxPDFExport: TfrxPDFExport;
     frxCSVExport: TfrxCSVExport;
+    frxXMLExport: TfrxXMLExport;
+    frxXLSExport: TfrxXLSExport;
   private
     FReport: TfrxReport;
     FReportPath: string;
-    FExportMode: string;
+    FParams: THorseList;
+    function GetExportMode: TExportMode;
+    function GetReportPreview: TMemoryStream;
+    function PrepareReport: Boolean;
+    function GetReportPath: string;
     procedure ExportReport(const AStream: TMemoryStream; const AfrxCustomExportFilter: TfrxCustomExportFilter);
-    function GetExportMode(const AParams: THorseList): TfrxCustomExportFilter;
-    function GetReportFilePath: string;
+    procedure ExportReportExcel(const AStream: TMemoryStream);
   public
     function GetReport(const AReport: TfrxReport; const AQuery: TFDQuery; const AParams: THorseList): TStream;
+    procedure GenerateReport(const AStream: TMemoryStream = nil);
   end;
 
 implementation
+
+uses
+  Utils.IOUtils;
 
 {$R *.dfm}
 
@@ -40,53 +49,105 @@ begin
   AfrxCustomExportFilter.ShowDialog := False;
   AfrxCustomExportFilter.UseFileCache := False;
   AfrxCustomExportFilter.Stream := AStream;
-  AfrxCustomExportFilter.DefaultPath := EmptyStr;
-  AfrxCustomExportFilter.FileName := EmptyStr;
+  AfrxCustomExportFilter.DefaultPath := GetReportPath;
+  AfrxCustomExportFilter.FileName := GetReportPath;
   FReport.PreviewPages.Export(AfrxCustomExportFilter);
-  FReport.Clear;
 end;
 
-function TServiceBase.GetExportMode(const AParams: THorseList): TfrxCustomExportFilter;
+procedure TServiceBase.ExportReportExcel(const AStream: TMemoryStream);
 begin
-  Result := frxPDFExport;
-  AParams.TryGetValue('export', FExportMode);
-  if FExportMode.IsEmpty then
-    Exit;
-  if FExportMode.ToInteger = TTipoExportMode.PDF.GetValue then
-    Result := frxPDFExport
-  else if FExportMode.ToInteger = TTipoExportMode.EXCEL.GetValue then
-    //Result := frx
-  else if FExportMode.ToInteger = TTipoExportMode.CSV.GetValue then
-    Result := frxCSVExport;
-    //else
-    //Result := xml
+  frxXLSExport.ShowProgress := False;
+  frxXLSExport.ShowDialog := False;
+  frxXLSExport.PageBreaks := False;
+  frxXLSExport.EmptyLines := False;
+  frxXLSExport.DataOnly := True;
+  frxXLSExport.UseFileCache := True;
+  frxXLSExport.ExportEMF := True;
+  frxXLSExport.Background := True;
+  frxXLSExport.ExportStyles := True;
+  frxXLSExport.ExportPictures := True;
+  frxXLSExport.FastExport := True;
+  frxXLSExport.DefaultPath := GetReportPath;
+  frxXLSExport.FileName := GetReportPath;
+  FReport.PreviewPages.Export(frxXLSExport);
+end;
+
+procedure TServiceBase.GenerateReport(const AStream: TMemoryStream);
+begin
+  try
+    if not PrepareReport then
+      Exit;
+    case GetExportMode of
+      TExportMode.PDF:
+        ExportReport(AStream, frxPDFExport);
+      TExportMode.EXCEL:
+        ExportReportExcel(AStream);
+      TExportMode.XML:
+        ExportReport(AStream, frxXMLExport);
+      TExportMode.CSV:
+        ExportReport(AStream, frxCSVExport);
+      else
+        raise Exception.Create('Export mode not implemented on GenerateReport function (Providers.Connection)');
+    end;
+  except
+    on E: Exception do
+    raise;
+  end;
+end;
+
+function TServiceBase.GetExportMode: TExportMode;
+var
+  LExport: string;
+begin
+  Result := TExportMode.PDF;
+  if FParams.TryGetValue('export', LExport) then
+    Result := TExportMode(StrToIntDef(LExport, TExportMode.PDF.GetValue));
 end;
 
 function TServiceBase.GetReport(const AReport: TfrxReport; const AQuery: TFDQuery; const AParams: THorseList): TStream;
 begin
-  Result := TMemoryStream.Create;
-   FReport := AReport;
-  AReport.ShowProgress := False;
-  AReport.EngineOptions.EnableThreadSafe := True;
-  AReport.EngineOptions.SilentMode := True;
-  AReport.EngineOptions.DestroyForms := False;
-  AReport.EngineOptions.UseGlobalDataSetList := False;
-  AReport.EngineOptions.UseFileCache := True;
-  AReport.PreviewOptions.PagesInCache := 200;
-  AReport.PreviewOptions.PictureCacheInFile := True;
-  AReport.PreviewOptions.AllowEdit := False;
-  AReport.EngineOptions.MaxMemSize := 100;
-  AReport.EngineOptions.ReportThread := TThread.CurrentThread;
-  AReport.PrepareReport(False);
-  if (AReport.Errors.Count > 0) then
-    raise Exception.Create('Erros no prepare do relatório. ' + AReport.Errors.Text);
-  ExportReport(TMemoryStream(Result), GetExportMode(AParams));
+  FReport := AReport;
+  FParams := AParams;
+  Result := GetReportPreview;
 end;
 
-function TServiceBase.GetReportFilePath: string;
+function TServiceBase.GetReportPath: string;
+const
+  LUserName = 'igorqueirantes';
 begin
-  Result := '';
-  FReportPath := Result;
+  if FReportPath.Trim.IsEmpty then
+    FReportPath := Format('%s%s_%s_%s_%d_%d.pdf', [TIOUtils.GetApplicationTempDirectory, string(FReport.Name).ToLower.Replace('frxreport', EmptyStr),
+      LUserName, FormatDateTime('dd_mm_yy_hh_mm_ss', Now), Random(1000), Random(100)]);
+  Result := FReportPath;
+end;
+
+function TServiceBase.GetReportPreview: TMemoryStream;
+begin
+  Result := TMemoryStream.Create;
+  try
+    GenerateReport(Result);
+  except
+    Result.Free;
+    raise;
+  end;
+end;
+
+function TServiceBase.PrepareReport: Boolean;
+begin
+  Result := True;
+  FReport.ShowProgress := False;
+  FReport.EngineOptions.EnableThreadSafe := True;
+  FReport.EngineOptions.NewSilentMode := TfrxSilentMode.simSilent;
+  FReport.EngineOptions.DestroyForms := False;
+  FReport.EngineOptions.UseGlobalDataSetList := False;
+  FReport.EngineOptions.UseFileCache := False;
+  FReport.PreviewOptions.PictureCacheInFile := False;
+  FReport.PreviewOptions.PagesInCache := 0;
+  FReport.PreviewOptions.AllowEdit := False;
+  FReport.PrintOptions.ShowDialog := False;
+  FReport.PrepareReport;
+  if (FReport.Errors.Count > 0) then
+    raise Exception.Create('Erros no prepare do relatório. ' + FReport.Errors.Text);
 end;
 
 end.

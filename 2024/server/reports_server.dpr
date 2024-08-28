@@ -11,7 +11,8 @@ uses
   Providers.Consts in 'src\providers\Providers.Consts.pas',
   Controllers.Cliente in 'src\controllers\Controllers.Cliente.pas',
   Services.Cliente in 'src\services\Services.Cliente.pas' {ServiceCliente: TDataModule},
-  Types.ExportMode in 'src\providers\Types.ExportMode.pas';
+  Types.ExportMode in 'src\providers\Types.ExportMode.pas',
+  Utils.IOUtils in 'src\utils\Utils.IOUtils.pas';
 
 begin
   {$IFDEF MSWINDOWS}

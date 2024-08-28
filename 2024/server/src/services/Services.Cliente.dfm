@@ -1,6 +1,18 @@
 inherited ServiceCliente: TServiceCliente
   Height = 183
   Width = 442
+  inherited Connection: TFDConnection
+    Params.Strings = (
+      
+        'Database=C:\Projetos\embarcadero-conference\2024\database\DATABA' +
+        'SE.FDB'
+      'User_Name=SYSDBA'
+      'Password=masterkey'
+      'Port=3051'
+      'Server=127.0.0.1'
+      'Protocol=TCPIP'
+      'DriverID=FB')
+  end
   inherited frxReportBase: TfrxReport
     ReportOptions.LastChange = 45521.924613750000000000
     Datasets = <
@@ -418,16 +430,31 @@ inherited ServiceCliente: TServiceCliente
   object dbCliente: TfrxDBDataset
     UserName = 'Cliente'
     CloseDataSource = False
-    FieldAliases.Strings = (
-      'ID=ID'
-      'NOME=NOME'
-      'SOBRENOME=SOBRENOME'
-      'EMAIL=EMAIL'
-      'TELEFONE=TELEFONE')
     DataSet = qryCliente
     BCDToCurrency = False
     DataSetOptions = []
     Left = 96
     Top = 112
+    FieldDefs = <
+      item
+        FieldName = 'ID'
+        FieldAlias = 'ID'
+      end
+      item
+        FieldName = 'NOME'
+        FieldAlias = 'NOME'
+      end
+      item
+        FieldName = 'SOBRENOME'
+        FieldAlias = 'SOBRENOME'
+      end
+      item
+        FieldName = 'EMAIL'
+        FieldAlias = 'EMAIL'
+      end
+      item
+        FieldName = 'TELEFONE'
+        FieldAlias = 'TELEFONE'
+      end>
   end
 end
