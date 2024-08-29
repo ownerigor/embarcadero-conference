@@ -8,7 +8,6 @@ uses
   Horse.OctetStream,
   Services.Base in 'src\services\Services.Base.pas' {ServiceBase: TDataModule},
   Services.Base.Simples in 'src\services\Services.Base.Simples.pas' {ServiceBaseSimples: TDataModule},
-  Providers.Consts in 'src\providers\Providers.Consts.pas',
   Controllers.Cliente in 'src\controllers\Controllers.Cliente.pas',
   Services.Cliente in 'src\services\Services.Cliente.pas' {ServiceCliente: TDataModule},
   Types.ExportMode in 'src\providers\Types.ExportMode.pas',

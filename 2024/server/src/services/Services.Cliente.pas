@@ -9,7 +9,7 @@ uses
   FireDAC.Phys.FB, FireDAC.Phys.FBDef, FireDAC.ConsoleUI.Wait,
   FireDAC.Stan.Param, FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt, Data.DB,
   FireDAC.Comp.DataSet, FireDAC.Comp.Client, FireDAC.VCLUI.Wait, frxClass,
-  frxDBSet, frxExportCSV, frxExportBaseDialog, frxExportPDF, frCoreClasses;
+  frxDBSet, frxExportCSV, frxExportBaseDialog, frxExportPDF, frCoreClasses, frxExportXLS, frxExportXML;
 
 type
   TServiceCliente = class(TServiceBaseSimples)

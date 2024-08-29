@@ -2,7 +2,7 @@ unit Controllers.Cliente;
 
 interface
 
-uses Horse, Providers.Consts, Services.Cliente, System.Classes, Horse.OctetStream;
+uses Horse, Services.Cliente, System.Classes, Horse.OctetStream;
 
 procedure Registry;
 

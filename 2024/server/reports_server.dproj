@@ -110,7 +110,6 @@
             <FormType>dfm</FormType>
             <DesignClass>TDataModule</DesignClass>
         </DCCReference>
-        <DCCReference Include="src\providers\Providers.Consts.pas"/>
         <DCCReference Include="src\controllers\Controllers.Cliente.pas"/>
         <DCCReference Include="src\services\Services.Cliente.pas">
             <Form>ServiceCliente</Form>

@@ -1,6 +1,6 @@
 inherited ServiceCliente: TServiceCliente
   Height = 183
-  Width = 442
+  Width = 676
   inherited Connection: TFDConnection
     Params.Strings = (
       
@@ -12,6 +12,7 @@ inherited ServiceCliente: TServiceCliente
       'Server=127.0.0.1'
       'Protocol=TCPIP'
       'DriverID=FB')
+    Connected = True
   end
   inherited frxReportBase: TfrxReport
     ReportOptions.LastChange = 45521.924613750000000000
@@ -402,7 +403,7 @@ inherited ServiceCliente: TServiceCliente
         object Memo4: TfrxMemoView
           Align = baCenter
           AllowVectorExport = True
-          Left = 3.779530000000000000
+          Left = 3.779538886718750000
           Width = 710.551640000000000000
           Height = 15.118120000000000000
           Font.Charset = DEFAULT_CHARSET
@@ -443,18 +444,26 @@ inherited ServiceCliente: TServiceCliente
       item
         FieldName = 'NOME'
         FieldAlias = 'NOME'
+        FieldType = fftString
+        Size = 50
       end
       item
         FieldName = 'SOBRENOME'
         FieldAlias = 'SOBRENOME'
+        FieldType = fftString
+        Size = 50
       end
       item
         FieldName = 'EMAIL'
         FieldAlias = 'EMAIL'
+        FieldType = fftString
+        Size = 100
       end
       item
         FieldName = 'TELEFONE'
         FieldAlias = 'TELEFONE'
+        FieldType = fftString
+        Size = 20
       end>
   end
 end

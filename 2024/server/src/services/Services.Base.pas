@@ -9,7 +9,7 @@ uses
   Data.DB, FireDAC.Comp.Client, FireDAC.Phys.FB, FireDAC.Phys.FBDef, frxClass,
   frxDBSet, FireDAC.Stan.Param, FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt,
   FireDAC.Comp.DataSet, Horse.OctetStream, frxExportCSV, frxExportBaseDialog,
-  frxExportPDF, Providers.Consts, System.JSON, Types.ExportMode, Horse, frCoreClasses, frxExportXML, frxExportXLS;
+  frxExportPDF, System.JSON, Types.ExportMode, Horse, frCoreClasses, frxExportXML, frxExportXLS;
 
 type
   TServiceBase = class(TDataModule)
