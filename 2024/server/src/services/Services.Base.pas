@@ -21,14 +21,11 @@ type
     frxXLSExport: TfrxXLSExport;
   private
     FReport: TfrxReport;
-    FReportPath: string;
     FParams: THorseList;
     function GetExportMode: TExportMode;
     function GetReportStream: TMemoryStream;
     function PrepareReport: Boolean;
-    function GetReportPath: string;
     procedure ExportReport(const AStream: TMemoryStream; const AfrxCustomExportFilter: TfrxCustomExportFilter);
-    procedure ExportReportExcel(const AStream: TMemoryStream);
   protected
     function GetReportName: string; virtual;
   public
@@ -54,22 +51,6 @@ begin
   FReport.PreviewPages.Export(AfrxCustomExportFilter);
 end;
 
-procedure TServiceBase.ExportReportExcel(const AStream: TMemoryStream);
-begin
-  frxXLSExport.ShowProgress := False;
-  frxXLSExport.ShowDialog := False;
-  frxXLSExport.PageBreaks := False;
-  frxXLSExport.EmptyLines := False;
-  frxXLSExport.DataOnly := True;
-  frxXLSExport.UseFileCache := True;
-  frxXLSExport.ExportEMF := True;
-  frxXLSExport.Background := True;
-  frxXLSExport.ExportStyles := True;
-  frxXLSExport.ExportPictures := True;
-  frxXLSExport.FastExport := True;
-  FReport.PreviewPages.Export(frxXLSExport);
-end;
-
 procedure TServiceBase.GenerateReport(const AStream: TMemoryStream);
 begin
   try
@@ -78,8 +59,6 @@ begin
     case GetExportMode of
       TExportMode.PDF:
         ExportReport(AStream, frxPDFExport);
-      TExportMode.EXCEL:
-        ExportReportExcel(AStream);
       TExportMode.XML:
         ExportReport(AStream, frxXMLExport);
       TExportMode.CSV:
@@ -112,16 +91,6 @@ end;
 function TServiceBase.GetReportName: string;
 begin
   Result := 'report' + GetExportMode.GetExtension;
-end;
-
-function TServiceBase.GetReportPath: string;
-const
-  LUserName = 'igorqueirantes';
-begin
-  if FReportPath.Trim.IsEmpty then
-    FReportPath := Format('%s%s_%s_%s_%d_%d.pdf', [TIOUtils.GetApplicationTempDirectory, string(FReport.Name).ToLower.Replace('frxreport', EmptyStr),
-      LUserName, FormatDateTime('dd_mm_yy_hh_mm_ss', Now), Random(1000), Random(100)]);
-  Result := FReportPath;
 end;
 
 function TServiceBase.GetReportStream: TMemoryStream;

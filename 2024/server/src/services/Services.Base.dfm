@@ -4,11 +4,11 @@ object ServiceBase: TServiceBase
   object Connection: TFDConnection
     Params.Strings = (
       
-        'Database=C:\Projetos\Delphi\embarcadero-conference\2024\database' +
-        '\DATABASE.FDB'
+        'Database=C:\Projetos\embarcadero-conference\2024\database\DATABA' +
+        'SE.FDB'
       'User_Name=SYSDBA'
       'Password=masterkey'
-      'Port=3050'
+      'Port=3051'
       'Server=127.0.0.1'
       'Protocol=TCPIP'
       'DriverID=FB')

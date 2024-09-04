@@ -2,16 +2,6 @@ inherited ServiceCliente: TServiceCliente
   Height = 183
   Width = 676
   inherited Connection: TFDConnection
-    Params.Strings = (
-      
-        'Database=C:\Projetos\embarcadero-conference\2024\database\DATABA' +
-        'SE.FDB'
-      'User_Name=SYSDBA'
-      'Password=masterkey'
-      'Port=3051'
-      'Server=127.0.0.1'
-      'Protocol=TCPIP'
-      'DriverID=FB')
     Connected = True
   end
   inherited frxReportBase: TfrxReport
