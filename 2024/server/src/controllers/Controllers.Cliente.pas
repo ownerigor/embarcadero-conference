@@ -12,9 +12,9 @@ procedure DoReportCliente(Req: THorseRequest; Res: THorseResponse; Next: TProc);
 var
   LService: TServiceCliente;
 begin
-  LService := TServiceCliente.Create(nil);
+  LService := TServiceCliente.Create(Req.Query.Dictionary);
   try
-    Res.Send<TFileReturn>(LService.GetReport(LService.frxReportBase, Req.Query.Dictionary));
+    Res.SendFile(LService.GetReport(LService.frxReportBase), LService.GetReportName);
   finally
     LService.Free;
   end;

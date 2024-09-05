@@ -26,11 +26,11 @@ type
     function GetReportStream: TMemoryStream;
     function PrepareReport: Boolean;
     procedure ExportReport(const AStream: TMemoryStream; const AfrxCustomExportFilter: TfrxCustomExportFilter);
-  protected
-    function GetReportName: string; virtual;
   public
-    function GetReport(const AReport: TfrxReport; const AParams: THorseList): TFileReturn;
+    function GetReport(const AReport: TfrxReport): TMemoryStream;
+    function GetReportName: string; virtual;
     procedure GenerateReport(const AStream: TMemoryStream = nil);
+    constructor Create(const AParams: THorseList); reintroduce;
   end;
 
 implementation
@@ -41,6 +41,12 @@ uses
 {$R *.dfm}
 
 { TServiceBase }
+
+constructor TServiceBase.Create(const AParams: THorseList);
+begin
+  inherited Create(nil);
+  FParams := AParams;
+end;
 
 procedure TServiceBase.ExportReport(const AStream: TMemoryStream; const AfrxCustomExportFilter: TfrxCustomExportFilter);
 begin
@@ -81,11 +87,10 @@ begin
     Result := TExportMode(StrToIntDef(LExport, TExportMode.PDF.GetValue));
 end;
 
-function TServiceBase.GetReport(const AReport: TfrxReport; const AParams: THorseList): TFileReturn;
+function TServiceBase.GetReport(const AReport: TfrxReport): TMemoryStream;
 begin
   FReport := AReport;
-  FParams := AParams;
-  Result := TFileReturn.Create(GetReportName, GetReportStream);
+  Result := GetReportStream;
 end;
 
 function TServiceBase.GetReportName: string;
