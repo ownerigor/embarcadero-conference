@@ -8,7 +8,7 @@ procedure Registry;
 
 implementation
 
-procedure DoReportCliente(Req: THorseRequest; Res: THorseResponse; Next: TProc);
+procedure DoReportCliente(Req: THorseRequest; Res: THorseResponse);
 var
   LService: TServiceCliente;
 begin

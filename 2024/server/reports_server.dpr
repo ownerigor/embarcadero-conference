@@ -5,7 +5,6 @@ program reports_server;
 
 uses
   Horse,
-  Horse.OctetStream,
   Services.Base in 'src\services\Services.Base.pas' {ServiceBase: TDataModule},
   Services.Base.Simples in 'src\services\Services.Base.Simples.pas' {ServiceBaseSimples: TDataModule},
   Controllers.Cliente in 'src\controllers\Controllers.Cliente.pas',
@@ -18,9 +17,6 @@ begin
   IsConsole := False;
   ReportMemoryLeaksOnShutdown := True;
   {$ENDIF}
-
-  THorse
-    .Use(OctetStream);
 
   Controllers.Cliente.Registry;
 

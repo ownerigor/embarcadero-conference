@@ -4,7 +4,7 @@ interface
 
 type
 {$SCOPEDENUMS ON}
-  TExportMode = (PDF, EXCEL, XML, CSV);
+  TExportMode = (PDF, XML, CSV);
 {$SCOPEDENUMS OFF}
 
   TExportModeHelper = record helper for TExportMode
@@ -19,8 +19,6 @@ begin
   case Self of
     TExportMode.PDF:
       Result := '.pdf';
-    TExportMode.EXCEL:
-      Result := '.xls';
     TExportMode.XML:
       Result := '.xml';
     TExportMode.CSV:
