@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  api-dev:
+    build: .
+    container_name: api-dev
+    ports:
+      - "9050:9050"
+    volumes:
+      - ./Linux64/Debug:/usr/sbin
+    entrypoint: ["/usr/sbin/docker_example_server"]
+
+  api:
+    build: .
+    container_name: api
+    ports:
+      - "9050:9050"
